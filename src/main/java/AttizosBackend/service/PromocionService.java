@@ -3,6 +3,7 @@ package AttizosBackend.service;
 import AttizosBackend.model.DetalleCombo;
 import AttizosBackend.model.Producto;
 import AttizosBackend.model.Promocion;
+import AttizosBackend.websocket.SyncSocketHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -22,6 +23,8 @@ public class PromocionService {
 
     @Autowired
     private JdbcTemplate db;
+    @Autowired
+    private  SyncSocketHandler socketHandler;
 
     public java.util.List<Promocion> cargarPromocionesActivas() {
         String sql = "SELECT * FROM productos WHERE categoria = 'Promocion' AND estado = 'Activo'";
@@ -96,6 +99,7 @@ public class PromocionService {
                 }
             });
         }
+        socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
         return promo;
     }
 

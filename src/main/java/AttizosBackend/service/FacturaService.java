@@ -117,13 +117,14 @@ public class FacturaService {
         if (requiereCocina) {
             db.update("INSERT INTO cola_cocina (id_pedido, numero_ticket, estado) VALUES (?, ?, 'Pendiente')",
                     numeroFactura, numeroTicketDiario);
+            socketHandler.notificarAClientes("{\"evento\": \"SYNC_PEDIDOS\"}");
         }
 
         Map<String, Integer> respuesta = new HashMap<>();
         respuesta.put("numeroFactura", numeroFactura);
         respuesta.put("numeroTicket", numeroTicketDiario);
 
-        socketHandler.notificarAClientes("ACTUALIZAR_INVENTARIO");
+        socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
         return respuesta;
     }
     @Transactional
@@ -152,7 +153,8 @@ public class FacturaService {
                     ((Number) lu.get("cantidad_descontada")).doubleValue(), "Anulación Factura #" + numeroFactura, (Integer) lu.get("id_lote"));
 
         }
-        socketHandler.notificarAClientes("ACTUALIZAR_INVENTARIO");
+        socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
+        socketHandler.notificarAClientes("{\"evento\": \"SYNC_PEDIDOS\"}");
 
         return true;
     }

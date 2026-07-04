@@ -1,6 +1,7 @@
 package AttizosBackend.service;
 
 import AttizosBackend.model.Insumo;
+import AttizosBackend.websocket.SyncSocketHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -12,7 +13,9 @@ import java.time.LocalDate;
 public class InsumoService {
 
     @Autowired
-    private JdbcTemplate db; 
+    private JdbcTemplate db;
+    @Autowired
+    private SyncSocketHandler socketHandler;
 
     @Transactional
     public java.util.List<Insumo> obtenerInventarioActivo() {
@@ -64,6 +67,8 @@ public class InsumoService {
         String sqlLote = "INSERT INTO insumos_lotes (codigo_insumo, stock_actual, fecha_ingreso, fecha_vencimiento, costo_compra, estado) VALUES (?, ?, CURRENT_DATE, ?, ?, 'Activo')";
         LocalDate vencimiento = (insumo.getFechaVencimiento() != null) ? insumo.getFechaVencimiento() : LocalDate.now().plusYears(10);
         db.update(sqlLote, insumo.getCodigo(), insumo.getStockActual(), vencimiento, costoInicial);
+
+        socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
         
         return true;
     }
@@ -71,7 +76,9 @@ public class InsumoService {
     @Transactional
     public boolean registrarNuevaCompraLote(String codigoInsumo, double cantidadComprada, double costo, LocalDate vencimiento) {
         String sqlLote = "INSERT INTO insumos_lotes (codigo_insumo, stock_actual, fecha_ingreso, fecha_vencimiento, costo_compra, estado) VALUES (?, ?, CURRENT_DATE, ?, ?, 'Activo')";
-        return db.update(sqlLote, codigoInsumo, cantidadComprada, vencimiento, costo) > 0;
+        boolean exito = db.update(sqlLote, codigoInsumo, cantidadComprada, vencimiento, costo) > 0;
+        if (exito) socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
+        return exito;
     }
 
     @Transactional
@@ -80,6 +87,7 @@ public class InsumoService {
         String sqlCatalogo = "UPDATE insumos_catalogo SET estado = 'Inactivo', nombre = CONCAT(nombre, ' [BAJA-', codigo, ']') WHERE codigo = ?";
         db.update(sqlCatalogo, codigo);
 
+        socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
         return true;
     }
 

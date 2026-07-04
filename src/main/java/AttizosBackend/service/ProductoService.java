@@ -97,7 +97,9 @@ public class ProductoService {
     }
 
     public boolean eliminarProducto(int idProducto) {
-        return db.update("UPDATE productos SET estado = 'Inactivo' WHERE id_producto = ?", idProducto) > 0;
+        boolean exito = db.update("UPDATE productos SET estado = 'Inactivo' WHERE id_producto = ?", idProducto) > 0;
+        if (exito) socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
+        return exito;
     }
 
     public boolean actualizarImagenProducto(int idProducto, String nuevaURL) {
