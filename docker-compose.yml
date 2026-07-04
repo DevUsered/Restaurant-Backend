@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: attizos_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Abril2026Temporal
+      POSTGRES_DB: attizos_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  attizos_backend:
+    build: .
+    container_name: attizos_api
+    depends_on:
+      - postgres_db
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres_db:5432/attizos_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: Abril2026Temporal
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
