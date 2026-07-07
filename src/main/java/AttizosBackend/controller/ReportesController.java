@@ -77,7 +77,11 @@ public class ReportesController {
         for(Map<String, Object> e : empleados) sumaSueldos += ((Number)e.get("sueldo")).doubleValue();
         reporte.setTotalSueldos(sumaSueldos);
 
-        String sqlAudit = "SELECT * FROM auditoria ORDER BY fecha_hora DESC";
+        String filtroAudit = "";
+        if (inicio != null && fin != null && !inicio.isEmpty() && !fin.isEmpty()) {
+            filtroAudit = " WHERE CAST(fecha_hora AS DATE) BETWEEN '" + inicio + "' AND '" + fin + "' ";
+        }
+        String sqlAudit = "SELECT * FROM auditoria " + filtroAudit + " ORDER BY fecha_hora DESC";
         reporte.setAuditoria(db.queryForList(sqlAudit));
 
         return reporte;
@@ -97,5 +101,31 @@ public class ReportesController {
         String sql = "SELECT COUNT(*) FROM egresos WHERE concepto = ?";
         Integer count = db.queryForObject(sql, Integer.class, concepto);
         return count != null && count > 0;
+    }
+    @PostMapping("/auditoria")
+    public boolean registrarAuditoria(@RequestBody Map<String, Object> datos){
+        try{
+            String sql = "INSERT INTO auditoria (operador, tipo_area, nombre_item, accion, cantidad, motivo, fecha_hora) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
+
+            String operador = (String) datos.getOrDefault("operador", "Sistema");
+            String tipoArea = (String) datos.getOrDefault("tipoArea", "General");
+            String nombreItem = (String) datos.getOrDefault("nombreItem", "Varios");
+            String accion = (String) datos.getOrDefault("accion", "Acción");
+
+            double cantidad = 0.0;
+            if (datos.get("cantidad") != null) {
+                cantidad = ((Number) datos.get("cantidad")).doubleValue();
+            }
+
+            String motivo = (String) datos.getOrDefault("motivo", "");
+
+            boolean exito = db.update(sql, operador, tipoArea, nombreItem, accion, cantidad, motivo) > 0;
+            if (exito) {
+                socketHandler.notificarAClientes("{\"evento\": \"SYNC_REPORTES\"}");
+            }
+            return exito;
+        }catch (Exception e){
+            return false;
+        }
     }
 }
