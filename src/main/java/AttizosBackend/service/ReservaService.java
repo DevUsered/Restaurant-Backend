@@ -51,7 +51,7 @@ public class ReservaService {
         return filas > 0;
     }
     public boolean actualizarEstadoReserva(String idReserva, String nuevoEstado){
-        String sql = "UPDATE reservas SET estado = ? WHERE id_reserva = ?";
+        String sql = "UPDATE reservas SET estado = ? WHERE id = ?";
         boolean exito =  db.update(sql, nuevoEstado, idReserva) > 0;
         if(exito) socketHandler.notificarAClientes("{\"evento\": \"SYNC_RESERVAS\"}");
         return exito;
