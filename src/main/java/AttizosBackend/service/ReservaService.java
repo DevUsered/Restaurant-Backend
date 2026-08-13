@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -21,8 +23,16 @@ public class ReservaService {
     public List<Reserva> obtenerReservasPendientesYLimpiar(){
         String sqlLimpieza = "UPDATE reservas SET estado = 'Expirada' " +
                 "WHERE estado = 'Pendiente' AND fecha_hora < (CURRENT_TIMESTAMP - INTERVAL '15 minutes')";
-        db.update(sqlLimpieza);
+        int expiradas = db.update(sqlLimpieza);
 
+        if(expiradas > 0){
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_RESERVAS\"}");
+                }
+            });
+        }
         String sqlSelect = "SELECT id_reserva, nombre_cliente, telefono, cantidad_personas, fecha_hora, observaciones, estado " +
                 "FROM reservas WHERE estado = 'Pendiente' ORDER BY fecha_hora ASC";
 
@@ -47,13 +57,27 @@ public class ReservaService {
 
         int filas = db.update(sql, r.getId(), r.getNombreCliente(), r.getTelefono(),
                 r.getCantidadPersonas(), Timestamp.valueOf(r.getFecha()), r.getObservaciones());
-        if(filas > 0) socketHandler.notificarAClientes("{\"evento\": \"SYNC_RESERVAS\"}");
+        if(filas > 0) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_RESERVAS\"}");
+                }
+            });
+        }
         return filas > 0;
     }
     public boolean actualizarEstadoReserva(String idReserva, String nuevoEstado){
-        String sql = "UPDATE reservas SET estado = ? WHERE id = ?";
+        String sql = "UPDATE reservas SET estado = ? WHERE id_reserva = ?";
         boolean exito =  db.update(sql, nuevoEstado, idReserva) > 0;
-        if(exito) socketHandler.notificarAClientes("{\"evento\": \"SYNC_RESERVAS\"}");
+        if(exito) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_RESERVAS\"}");
+                }
+            });
+        }
         return exito;
     }
 }

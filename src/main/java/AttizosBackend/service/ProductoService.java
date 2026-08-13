@@ -10,6 +10,10 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.Map;
@@ -22,6 +26,7 @@ public class ProductoService {
     private SyncSocketHandler socketHandler;
     private ObjectMapper mapper = new ObjectMapper();
 
+    @Transactional
     public Producto insertarProducto(Producto p){
         String sql = "INSERT INTO productos (nombre, precio, categoria, tipo_clase, stock_directo, tiene_receta, imagen_base64, atributos_extra, estado) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, 'Activo')";
@@ -48,7 +53,12 @@ public class ProductoService {
         if (keyHolder.getKeys() != null) {
             p.setId(((Number) keyHolder.getKeys().get("id_producto")).intValue());
         }
-        socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
+            }
+        });
         return p;
     }
     public java.util.List<Producto> obtenerMenuCompleto() {
@@ -84,26 +94,52 @@ public class ProductoService {
         });
     }
 
+    @Transactional
     public boolean actualizarProducto(Producto p) {
         String sql = "UPDATE productos SET nombre = ?, precio = ?, categoria = ?, stock_directo = ?, imagen_base64 = ?, atributos_extra = ?::jsonb WHERE id_producto = ?";
         try {
             String jsonAtributos = mapper.writeValueAsString(p.getAtributosDinamicos());
             boolean exito = db.update(sql, p.getNombre(), p.getPrecio(), p.getCategoria(), (int) p.getStock(), p.getImagenURL(), jsonAtributos, p.getId()) > 0;
-            if(exito) socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
+            if(exito){
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
+                    }
+                });
+            }
             return exito;
         } catch (Exception e) {
             return false;
         }
     }
 
+    @Transactional
     public boolean eliminarProducto(int idProducto) {
         boolean exito = db.update("UPDATE productos SET estado = 'Inactivo' WHERE id_producto = ?", idProducto) > 0;
-        if (exito) socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
+        if (exito){
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
+                }
+            });
+        }
         return exito;
     }
 
+    @Transactional
     public boolean actualizarImagenProducto(int idProducto, String nuevaURL) {
-        return db.update("UPDATE productos SET imagen_base64 = ? WHERE id_producto = ?", nuevaURL, idProducto) > 0;
+        boolean exito =  db.update("UPDATE productos SET imagen_base64 = ? WHERE id_producto = ?", nuevaURL, idProducto) > 0;
+        if(exito){
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
+                }
+            });
+        }
+        return exito;
     }
 
 }

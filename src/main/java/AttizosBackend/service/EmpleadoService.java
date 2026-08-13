@@ -5,6 +5,8 @@ import AttizosBackend.repository.EmpleadoRepository;
 import AttizosBackend.websocket.SyncSocketHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -24,7 +26,12 @@ public class EmpleadoService {
 
     public Empleado guardarEmpleado(Empleado empleado){
         Empleado guardado =  empleadoRepository.save(empleado);
-        socketHandler.notificarAClientes("{\"evento\": \"SYNC_EMPLEADOS\"}");
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                socketHandler.notificarAClientes("{\"evento\": \"SYNC_EMPLEADOS\"}");
+            }
+        });
         return guardado;
     }
     public Empleado actualizarEmpleado(Empleado empleado) {
@@ -34,16 +41,26 @@ public class EmpleadoService {
                 empleado.getSueldo(),
                 empleado.getUsername(),
                 empleado.getPasswordHash(),
-                empleado.getIdEmpleado().trim() // Limpiamos espacios
+                empleado.getIdEmpleado().trim()
         );
-        socketHandler.notificarAClientes("{\"evento\": \"SYNC_EMPLEADOS\"}");
-        return empleado; 
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                socketHandler.notificarAClientes("{\"evento\": \"SYNC_EMPLEADOS\"}");
+            }
+        });
+        return empleado;
     }
     public boolean inactivarEmpleado(String id) {
         int filasAfectadas = empleadoRepository.inactivarEmpleadoDirecto(id.trim());
         boolean exito =  filasAfectadas > 0;
         if(exito){
-            socketHandler.notificarAClientes("{\"evento\": \"SYNC_EMPLEADOS\"}");
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_EMPLEADOS\"}");
+                }
+            });
         }
         return exito;
     }
@@ -52,8 +69,13 @@ public class EmpleadoService {
         int filasAfectadas = empleadoRepository.actualizarFechaPagoDirecto(id.trim()); 
         boolean exito = filasAfectadas > 0;
         if(exito){
-            socketHandler.notificarAClientes("{\"evento\": \"SYNC_EMPLEADOS\"}");
-            socketHandler.notificarAClientes("{\"evento\": \"SYNC_REPORTES\"}");
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_EMPLEADOS\"}");
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_REPORTES\"}");
+                }
+            });
         }
         return exito;
     }

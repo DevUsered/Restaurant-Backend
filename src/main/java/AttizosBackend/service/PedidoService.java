@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,21 +50,24 @@ public class PedidoService {
                 rs.getInt("cantidad") + "x  " + rs.getString("nombre"), idPedido
         );
     }
+    @Transactional
     public boolean eliminarPedidoDespachado(int idPedido) {
         db.update("UPDATE facturas SET estado = 'Finalizada' WHERE numero_factura = ?", idPedido);
         boolean exito =  db.update("DELETE FROM cola_cocina WHERE id_pedido = ?", idPedido) > 0;
-        if(exito) socketHandler.notificarAClientes("{\"evento\": \"SYNC_PEDIDOS\"}");
+        if(exito) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_PEDIDOS\"}");
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_REPORTES\"}");
+                }
+            });
+        }
+
         return exito;
     }
     @Transactional
     public boolean cancelarPedidoYAnularVenta(int idPedido) {
-        boolean ventaAnulada = facturaService.anularVenta(idPedido);
-
-        if (ventaAnulada) {
-            db.update("DELETE FROM cola_cocina WHERE id_pedido = ?", idPedido);
-            socketHandler.notificarAClientes("{\"evento\": \"SYNC_PEDIDOS\"}");
-            return true;
-        }
-        return false;
+        return facturaService.anularVenta(idPedido);
     }
 }

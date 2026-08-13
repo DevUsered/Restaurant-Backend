@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDate;
 
@@ -68,8 +70,13 @@ public class InsumoService {
         LocalDate vencimiento = (insumo.getFechaVencimiento() != null) ? insumo.getFechaVencimiento() : LocalDate.now().plusYears(10);
         db.update(sqlLote, insumo.getCodigo(), insumo.getStockActual(), vencimiento, costoInicial);
 
-        socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
-        
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
+            }
+        });
+
         return true;
     }
 
@@ -77,7 +84,14 @@ public class InsumoService {
     public boolean registrarNuevaCompraLote(String codigoInsumo, double cantidadComprada, double costo, LocalDate vencimiento) {
         String sqlLote = "INSERT INTO insumos_lotes (codigo_insumo, stock_actual, fecha_ingreso, fecha_vencimiento, costo_compra, estado) VALUES (?, ?, CURRENT_DATE, ?, ?, 'Activo')";
         boolean exito = db.update(sqlLote, codigoInsumo, cantidadComprada, vencimiento, costo) > 0;
-        if (exito) socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
+        if (exito) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
+                }
+            });
+        }
         return exito;
     }
 
@@ -87,7 +101,12 @@ public class InsumoService {
         String sqlCatalogo = "UPDATE insumos_catalogo SET estado = 'Inactivo', nombre = CONCAT(nombre, ' [BAJA-', codigo, ']') WHERE codigo = ?";
         db.update(sqlCatalogo, codigo);
 
-        socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
+            }
+        });
         return true;
     }
 
@@ -97,7 +116,15 @@ public class InsumoService {
         Double totalDescontado = db.queryForObject(sqlSelect, Double.class, codigoInsumo);
 
         String sqlUpdate = "UPDATE insumos_lotes SET estado = 'Inactivo', stock_actual = 0 WHERE codigo_insumo = ? AND fecha_vencimiento < CURRENT_DATE AND estado = 'Activo'";
-        db.update(sqlUpdate, codigoInsumo);
+        int afectadas = db.update(sqlUpdate, codigoInsumo);
+        if (afectadas > 0) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
+                }
+            });
+        }
 
         return (totalDescontado != null) ? totalDescontado : 0.0;
     }
@@ -134,12 +161,16 @@ public class InsumoService {
 
             db.update(sqlUpdateLote, nuevoStockLote, nuevoEstado, idLote);
         }
-
         if (cantidadFaltante > 0) {
             System.err.println("❌ Stock insuficiente en almacén para: " + codigoInsumo);
             throw new RuntimeException("Stock insuficiente para el insumo: " + codigoInsumo);
         }
-
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
+            }
+        });
         return true;
     }
 }

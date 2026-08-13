@@ -11,6 +11,8 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -99,12 +101,27 @@ public class PromocionService {
                 }
             });
         }
-        socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
+            }
+        });
         return promo;
     }
-
+    @Transactional
     public int verificarYDesactivarPromociones() {
         String sql = "UPDATE productos SET estado = 'Inactivo' WHERE categoria = 'Promocion' AND estado = 'Activo' AND fecha_fin IS NOT NULL AND fecha_fin < CURRENT_DATE";
-        return db.update(sql);
+        int afectadas = db.update(sql);
+
+        if (afectadas > 0) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
+                }
+            });
+        }
+        return afectadas;
     }
 }

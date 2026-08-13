@@ -9,6 +9,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -124,7 +126,17 @@ public class FacturaService {
         respuesta.put("numeroFactura", numeroFactura);
         respuesta.put("numeroTicket", numeroTicketDiario);
 
-        socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
+        final boolean notificarCocina = requiereCocina;
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                if (notificarCocina) {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_PEDIDOS\"}");
+                }
+                socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
+                socketHandler.notificarAClientes("{\"evento\": \"SYNC_REPORTES\"}");
+            }
+        });
         return respuesta;
     }
     @Transactional
@@ -153,9 +165,14 @@ public class FacturaService {
                     ((Number) lu.get("cantidad_descontada")).doubleValue(), "Anulación Factura #" + numeroFactura, (Integer) lu.get("id_lote"));
 
         }
-        socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
-        socketHandler.notificarAClientes("{\"evento\": \"SYNC_PEDIDOS\"}");
-
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                socketHandler.notificarAClientes("{\"evento\": \"SYNC_INVENTARIO\"}");
+                socketHandler.notificarAClientes("{\"evento\": \"SYNC_PEDIDOS\"}");
+                socketHandler.notificarAClientes("{\"evento\": \"SYNC_REPORTES\"}");
+            }
+        });
         return true;
     }
     public Map<String, Object> obtenerFacturaConDetalles(int numeroFactura) {

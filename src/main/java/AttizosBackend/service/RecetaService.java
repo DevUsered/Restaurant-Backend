@@ -1,11 +1,14 @@
 package AttizosBackend.service;
 
 import AttizosBackend.model.Receta;
+import AttizosBackend.websocket.SyncSocketHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -15,6 +18,8 @@ import java.util.Map;
 
 @Service
 public class RecetaService {
+    @Autowired
+    private SyncSocketHandler socketHandler;
 
     @Autowired
     private JdbcTemplate db;
@@ -24,6 +29,12 @@ public class RecetaService {
         db.update("DELETE FROM recetas_detalle WHERE id_producto = ?", idProducto);
 
         if (receta.getIngredientes() == null || receta.getIngredientes().isEmpty()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
+                }
+            });
             return true;
         }
 
@@ -42,6 +53,12 @@ public class RecetaService {
             @Override
             public int getBatchSize() {
                 return listaIngredientes.size();
+            }
+        });
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
             }
         });
         return true;
