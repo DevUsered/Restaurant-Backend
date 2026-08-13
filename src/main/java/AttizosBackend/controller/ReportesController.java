@@ -27,36 +27,41 @@ public class ReportesController {
 
         String filtroFecha = "";
         if (inicio != null && fin != null && !inicio.isEmpty() && !fin.isEmpty()) {
-            filtroFecha = " AND CAST(fecha_hora AS DATE) BETWEEN '" + inicio + "' AND '" + fin + "' ";
+            filtroFecha = " WHERE CAST(fecha_hora AS DATE) BETWEEN '" + inicio + "' AND '" + fin + "' ";
         }
 
-        String sqlFacturas = "SELECT * FROM facturas WHERE estado != 'Anulada' " + filtroFecha + " ORDER BY fecha_hora DESC";
+        String sqlFacturas = "SELECT * FROM facturas " + filtroFecha + " ORDER BY fecha_hora DESC";
         List<Map<String, Object>> facturas = db.queryForList(sqlFacturas);
         reporte.setFacturas(facturas);
 
         double ingresos = 0;
         double ingresosEfectivo = 0;
         double ingresosQR = 0;
+        int ventasReales = 0;
         Map<String, Double> ventasXDia = new TreeMap<>();
         for(Map<String, Object> f : facturas) {
-            double total = ((Number)f.get("total")).doubleValue();
-            ingresos += total;
+            String estado = (String) f.get("estado");
+            if(estado == null || !estado.equalsIgnoreCase("Anulada")){
+                double total = ((Number)f.get("total")).doubleValue();
+                ingresos += total;
+                ventasReales++;
 
-            String metodo = (String) f.get("metodo_pago");
-            if("QR".equalsIgnoreCase(metodo)){
-                ingresosQR += total;
-            }else{
-                ingresosEfectivo += total;
+                String metodo = (String) f.get("metodo_pago");
+                if("QR".equalsIgnoreCase(metodo)){
+                    ingresosQR += total;
+                }else{
+                    ingresosEfectivo += total;
+                }
+
+                java.sql.Timestamp ts = (java.sql.Timestamp) f.get("fecha_hora");
+                String dia = ts.toLocalDateTime().toLocalDate().toString();
+                ventasXDia.put(dia, ventasXDia.getOrDefault(dia, 0.0) + total);
             }
-
-            java.sql.Timestamp ts = (java.sql.Timestamp) f.get("fecha_hora");
-            String dia = ts.toLocalDateTime().toLocalDate().toString();
-            ventasXDia.put(dia, ventasXDia.getOrDefault(dia, 0.0) + total);
         }
         reporte.setTotalIngresos(ingresos);
         reporte.setTotalEfectivo(ingresosEfectivo);
         reporte.setTotalQR(ingresosQR);
-        reporte.setCantidadVentas(facturas.size());
+        reporte.setCantidadVentas(ventasReales);
         reporte.setVentasPorDia(ventasXDia);
 
         String filtroEgreso = "";
