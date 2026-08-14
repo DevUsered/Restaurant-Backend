@@ -115,18 +115,17 @@ public class FacturaService {
                 }
             }
         }
-
-        if (requiereCocina) {
+        boolean enviarACocina = requiereCocina && request.getEstado().equalsIgnoreCase("En cocina");
+        if (enviarACocina) {
             db.update("INSERT INTO cola_cocina (id_pedido, numero_ticket, estado) VALUES (?, ?, 'Pendiente')",
                     numeroFactura, numeroTicketDiario);
-            socketHandler.notificarAClientes("{\"evento\": \"SYNC_PEDIDOS\"}");
         }
 
         Map<String, Integer> respuesta = new HashMap<>();
         respuesta.put("numeroFactura", numeroFactura);
         respuesta.put("numeroTicket", numeroTicketDiario);
 
-        final boolean notificarCocina = requiereCocina;
+        final boolean notificarCocina = enviarACocina;
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
