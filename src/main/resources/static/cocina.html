@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graft POS - Cocina</title>
+    <link rel="stylesheet" href="cocina.css">
+</head>
+<body>
+
+<!-- PANTALLA DE LOGIN -->
+<div id="login-container" class="screen visible">
+    <div class="login-box">
+        <h2>👨‍🍳 Acceso a Cocina</h2>
+        <input type="text" id="txtUsuario" placeholder="Usuario">
+        <input type="password" id="txtPassword" placeholder="Contraseña">
+        <button onclick="iniciarSesion()">Ingresar</button>
+        <p id="lblError" class="error-text"></p>
+    </div>
+</div>
+
+<!-- PANTALLA PRINCIPAL DE PEDIDOS (KDS) -->
+<div id="kds-container" class="screen hidden">
+    <header>
+        <div class="header-left">
+            <h1>🔥 Pedidos en Cocina</h1>
+            <span id="lblNombreCocinero" class="badge">Cocinero</span>
+        </div>
+        <button class="btn-logout" onclick="cerrarSesion()">❌ Salir</button>
+    </header>
+
+    <!-- Aquí se dibujarán las tarjetas de los pedidos con JavaScript -->
+    <main id="contenedor-pedidos" class="grid-pedidos">
+        <!-- Ejemplo de tarjeta generada por JS -->
+    </main>
+</div>
+
+<script src="cocina.js"></script>
+</body>
+</html>
