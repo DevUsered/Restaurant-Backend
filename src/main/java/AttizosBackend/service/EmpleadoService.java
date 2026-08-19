@@ -5,6 +5,7 @@ import AttizosBackend.repository.EmpleadoRepository;
 import AttizosBackend.websocket.SyncSocketHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,6 +25,7 @@ public class EmpleadoService {
         return empleadoRepository.findByEstado("Activo");
     }
 
+    @Transactional
     public Empleado guardarEmpleado(Empleado empleado){
         Empleado guardado =  empleadoRepository.save(empleado);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -34,6 +36,7 @@ public class EmpleadoService {
         });
         return guardado;
     }
+    @Transactional
     public Empleado actualizarEmpleado(Empleado empleado) {
         empleadoRepository.actualizarDatosDirecto(
                 empleado.getNombre(),
@@ -51,6 +54,7 @@ public class EmpleadoService {
         });
         return empleado;
     }
+    @Transactional
     public boolean inactivarEmpleado(String id) {
         int filasAfectadas = empleadoRepository.inactivarEmpleadoDirecto(id.trim());
         boolean exito =  filasAfectadas > 0;
@@ -65,6 +69,7 @@ public class EmpleadoService {
         return exito;
     }
 
+    @Transactional
     public boolean registrarFechaPago(String id){
         int filasAfectadas = empleadoRepository.actualizarFechaPagoDirecto(id.trim()); 
         boolean exito = filasAfectadas > 0;
