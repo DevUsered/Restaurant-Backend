@@ -1,6 +1,7 @@
 package AttizosBackend.controller;
 
 import AttizosBackend.service.PedidoService;
+import AttizosBackend.websocket.SyncSocketHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,12 +20,12 @@ public class PedidoWebController {
     /**
      * Endpoint 1: La tablet web pide la lista de pedidos pendientes
      */
+    @Autowired
+    private SyncSocketHandler socketHandler;
     @GetMapping("/pendientes")
     public ResponseEntity<List<Map<String, Object>>> obtenerPedidosPendientes() {
-        // 1. Obtenemos los pedidos base (ID, Ticket, Cliente, Estado) usando tu servicio
         List<Map<String, Object>> pedidos = pedidoService.obtenerPedidosPendientes();
 
-        // 2. Por cada pedido, le inyectamos los detalles (platos)
         for (Map<String, Object> pedido : pedidos) {
             int idPedido = (Integer) pedido.get("idPedido");
 
@@ -47,10 +48,11 @@ public class PedidoWebController {
     @PostMapping("/despachar/{idPedido}")
     public ResponseEntity<?> despacharPedido(@PathVariable int idPedido) {
 
-        // Reutilizamos tu método que borra de cola_cocina, marca factura Finalizada y notifica por WebSockets
         boolean exito = pedidoService.eliminarPedidoDespachado(idPedido);
 
         if (exito) {
+            socketHandler.notificarAClientes("{\"evento\": \"SYNC_PEDIDOS\"}");
+            socketHandler.notificarAClientes("{\"evento\": \"SYNC_REPORTES\"}");
             return ResponseEntity.ok(Map.of("exito", true, "mensaje", "Pedido despachado correctamente"));
         } else {
             return ResponseEntity.badRequest().body(Map.of("exito", false, "mensaje", "No se pudo despachar el pedido. Verifique si aún existe."));

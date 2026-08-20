@@ -30,11 +30,9 @@ public class CocinaWebController {
                     .body(Map.of("exito", false, "mensaje", "Faltan credenciales."));
         }
 
-        // 1. Buscamos al usuario en la BD de PostgreSQL
         String sql = "SELECT id_empleado, nombre, cargo, estado FROM empleados WHERE username = ? AND password_hash = ? AND estado = 'Activo'";
         List<Map<String, Object>> usuarios = db.queryForList(sql, username, passwordHash);
 
-        // 2. Si no existe, credenciales incorrectas
         if (usuarios.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("exito", false, "mensaje", "Usuario o contraseña incorrectos."));
@@ -43,13 +41,11 @@ public class CocinaWebController {
         Map<String, Object> usuario = usuarios.get(0);
         String cargo = (String) usuario.get("cargo");
 
-        // 3. 🛡️ EL ESCUDO DE SEGURIDAD: Solo dejamos pasar a los de Cocina
         if (cargo == null || (!cargo.equalsIgnoreCase("Cocinero") && !cargo.equalsIgnoreCase("Chef"))) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("exito", false, "mensaje", "⛔ Acceso denegado. Pantalla exclusiva para personal de cocina."));
         }
 
-        // 4. Login exitoso. Devolvemos los datos básicos para que la tablet sepa quién está cocinando.
         return ResponseEntity.ok(Map.of(
                 "exito", true,
                 "mensaje", "Bienvenido a la cocina, " + usuario.get("nombre"),

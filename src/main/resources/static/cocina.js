@@ -86,14 +86,15 @@ function iniciarWebSocket() {
 }
 
 function reproducirCampana() {
-    // Si tienes un mp3 en la carpeta static/sounds/
-    // const audio = new Audio('/sounds/cocina.mp3');
-    // audio.play().catch(e => console.log("Bloqueado por navegador"));
+   try{
+       const audio = new Audio('sounds/cocina.mp3');
+       audio.play().catch(e => {
+           console.warn("El navegador bloqeó el sonido automático.", e);
+       });
+   }catch (error){
+       console.error("Error al reproducir audio en la web:", error);
+   }
 }
-
-// ==========================================
-// 3. CARGAR Y DIBUJAR PEDIDOS
-// ==========================================
 async function cargarPedidos() {
     try {
         const response = await fetch(`${URL_BASE}/api/web/pedidos/pendientes`);
