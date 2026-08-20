@@ -7,6 +7,13 @@ const WS_URL = `ws://${SERVIDOR_IP}:${PUERTO}/ws-sync`;
 let socket = null;
 let usuarioActual = null;
 
+// ==========================================
+// NUEVAS VARIABLES PARA AUDIO Y MEMORIA
+// ==========================================
+const campanaAudio = new Audio('sounds/cocina.mp3');
+let idsPedidosEnPantalla = [];
+let esPrimeraCarga = true;
+
 async function iniciarSesion() {
     const user = document.getElementById("txtUsuario").value;
     const pass = document.getElementById("txtPassword").value;
@@ -28,6 +35,14 @@ async function iniciarSesion() {
         const data = await response.json();
 
         if (response.ok && data.exito) {
+            // 🚀 TRUCO: Desbloqueamos el audio en el primer clic (Login)
+            campanaAudio.volume = 0;
+            campanaAudio.play().then(() => {
+                campanaAudio.pause();
+                campanaAudio.currentTime = 0;
+                campanaAudio.volume = 1.0; // Lo devolvemos al 100% de volumen para cuando suene de verdad
+            }).catch(e => console.log("El navegador requiere más interacción para el audio."));
+
             // Login correcto
             usuarioActual = data.usuario;
             document.getElementById("lblNombreCocinero").innerText = usuarioActual.nombre;
@@ -53,11 +68,12 @@ function cerrarSesion() {
     document.getElementById("txtPassword").value = "";
     document.getElementById("kds-container").classList.replace("visible", "hidden");
     document.getElementById("login-container").classList.replace("hidden", "visible");
+
+    // Reiniciamos la memoria al cerrar sesión
+    idsPedidosEnPantalla = [];
+    esPrimeraCarga = true;
 }
 
-// ==========================================
-// 2. WEBSOCKET (TIEMPO REAL)
-// ==========================================
 function iniciarWebSocket() {
     socket = new WebSocket(WS_URL);
 
@@ -71,8 +87,9 @@ function iniciarWebSocket() {
 
         // Si desde JavaFX mandan el evento SYNC_PEDIDOS
         if (mensaje.includes("SYNC_PEDIDOS")) {
-            reproducirCampana();
-            cargarPedidos(); // Refrescar pantalla
+            // AQUÍ YA NO SUENA. Solo mandamos a recargar la pantalla.
+            // La inteligencia del sonido está dentro de cargarPedidos()
+            cargarPedidos();
         }
     };
 
@@ -83,20 +100,40 @@ function iniciarWebSocket() {
 }
 
 function reproducirCampana() {
-   try{
-       const audio = new Audio('sounds/cocina.mp3');
-       audio.play().catch(e => {
-           console.warn("El navegador bloqeó el sonido automático.", e);
-       });
-   }catch (error){
-       console.error("Error al reproducir audio en la web:", error);
-   }
+    try {
+        campanaAudio.currentTime = 0; // Reiniciar por si ya estaba sonando
+        campanaAudio.play().catch(e => {
+            console.warn("El navegador bloqueó el sonido automático.", e);
+        });
+    } catch (error) {
+        console.error("Error al reproducir audio en la web:", error);
+    }
 }
+
 async function cargarPedidos() {
     try {
         const response = await fetch(`${URL_BASE}/api/web/pedidos/pendientes`);
         if (response.ok) {
             const pedidos = await response.json();
+
+            // 1. Extraemos solo los IDs de los pedidos que acaban de llegar
+            const nuevosIds = pedidos.map(p => p.idPedido);
+
+            // 2. Si NO es la primera vez que carga la pantalla, verificamos qué cambió
+            if (!esPrimeraCarga) {
+                // Buscamos si hay algún ID nuevo que antes no estaba en nuestra pantalla
+                const llegoPedidoNuevo = nuevosIds.some(id => !idsPedidosEnPantalla.includes(id));
+
+                if (llegoPedidoNuevo) {
+                    reproducirCampana(); // ¡SUENA SOLO SI HAY UN PEDIDO NUEVO!
+                }
+            }
+
+            // 3. Actualizamos nuestra memoria para la próxima vez
+            idsPedidosEnPantalla = nuevosIds;
+            esPrimeraCarga = false;
+
+            // 4. Dibujamos
             dibujarPedidos(pedidos);
         }
     } catch (error) {
@@ -117,8 +154,6 @@ function dibujarPedidos(pedidos) {
         const tarjeta = document.createElement("div");
         tarjeta.className = "tarjeta-pedido";
 
-        // Convertir la lista de detalles (strings) en <li> de HTML
-        // Ajusta esto según cómo devuelva tu API los detalles
         let listaHTML = "";
         if(pedido.detalles) {
             pedido.detalles.forEach(det => {
@@ -149,7 +184,7 @@ async function despacharPedido(idPedido) {
         });
 
         if(response.ok) {
-            cargarPedidos(); // Recargamos para que desaparezca la tarjeta
+            cargarPedidos();
         }
     } catch (error) {
         console.error("Error despachando:", error);
