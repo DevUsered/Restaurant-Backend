@@ -51,8 +51,8 @@ public class PedidoWebController {
         boolean exito = pedidoService.eliminarPedidoDespachado(idPedido);
 
         if (exito) {
-            socketHandler.notificarAClientes("{\"evento\": \"SYNC_PEDIDOS\"}");
-            socketHandler.notificarAClientes("{\"evento\": \"SYNC_REPORTES\"}");
+            socketHandler.notificarAClientes("SYNC_PEDIDOS");
+            socketHandler.notificarAClientes("SYNC_REPORTES");
             return ResponseEntity.ok(Map.of("exito", true, "mensaje", "Pedido despachado correctamente"));
         } else {
             return ResponseEntity.badRequest().body(Map.of("exito", false, "mensaje", "No se pudo despachar el pedido. Verifique si aún existe."));
