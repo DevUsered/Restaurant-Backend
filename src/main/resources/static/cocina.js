@@ -24,8 +24,21 @@ async function iniciarSesion() {
         return;
     }
 
+    // 🔥 ¡EL TRUCO ANTI-CHROME VA AQUÍ ARRIBA! 🔥
+    // Lo ejecutamos INMEDIATAMENTE después del clic, antes de que Chrome se ponga estricto
+    campanaAudio.volume = 0;
+    let playPromise = campanaAudio.play();
+    if (playPromise !== undefined) {
+        playPromise.then(() => {
+            campanaAudio.pause();
+            campanaAudio.currentTime = 0;
+            campanaAudio.volume = 1.0; // Listo para sonar fuerte más adelante
+        }).catch(e => console.log("Chrome requiere interacción adicional."));
+    }
+
     try {
         lblError.innerText = "Conectando...";
+
         const response = await fetch(`${URL_BASE}/api/web/cocina/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -35,23 +48,13 @@ async function iniciarSesion() {
         const data = await response.json();
 
         if (response.ok && data.exito) {
-            // 🚀 TRUCO: Desbloqueamos el audio en el primer clic (Login)
-            campanaAudio.volume = 0;
-            campanaAudio.play().then(() => {
-                campanaAudio.pause();
-                campanaAudio.currentTime = 0;
-                campanaAudio.volume = 1.0; // Lo devolvemos al 100% de volumen para cuando suene de verdad
-            }).catch(e => console.log("El navegador requiere más interacción para el audio."));
-
             // Login correcto
             usuarioActual = data.usuario;
             document.getElementById("lblNombreCocinero").innerText = usuarioActual.nombre;
 
-            // Cambiar pantalla
             document.getElementById("login-container").classList.replace("visible", "hidden");
             document.getElementById("kds-container").classList.replace("hidden", "visible");
 
-            // Iniciar conexión y cargar datos
             iniciarWebSocket();
             cargarPedidos();
         } else {
