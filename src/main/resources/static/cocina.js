@@ -7,9 +7,6 @@ const WS_URL = `ws://${SERVIDOR_IP}:${PUERTO}/ws-sync`;
 let socket = null;
 let usuarioActual = null;
 
-// ==========================================
-// 1. SISTEMA DE LOGIN
-// ==========================================
 async function iniciarSesion() {
     const user = document.getElementById("txtUsuario").value;
     const pass = document.getElementById("txtPassword").value;

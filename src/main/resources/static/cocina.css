@@ -1,3 +1,6 @@
+/* =========================================
+   RESETEO Y FUENTES
+   ========================================= */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -10,12 +13,16 @@ body {
     color: #333;
 }
 
-/* Control de pantallas */
+/* =========================================
+   CONTROL DE PANTALLAS (LOGIN / KDS)
+   ========================================= */
 .screen { display: none; }
 .visible { display: flex; flex-direction: column; height: 100vh; }
 .hidden { display: none !important; }
 
-/* -- LOGIN -- */
+/* =========================================
+   PANTALLA DE LOGIN
+   ========================================= */
 #login-container {
     justify-content: center;
     align-items: center;
@@ -33,18 +40,38 @@ body {
 }
 
 .login-box h2 { margin-bottom: 20px; color: #111; }
+
 .login-box input {
-    width: 100%; padding: 12px; margin-bottom: 15px;
-    border: 1px solid #ccc; border-radius: 8px; font-size: 16px;
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
 }
+
 .login-box button {
-    width: 100%; padding: 15px; border: none; border-radius: 8px;
-    background-color: #00cc6a; color: white; font-weight: bold; font-size: 18px;
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    background-color: #00cc6a;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
     cursor: pointer;
 }
-.error-text { color: red; margin-top: 10px; min-height: 20px; font-weight: bold; }
 
-/* -- KDS (Pantalla Cocina) -- */
+.error-text {
+    color: red;
+    margin-top: 10px;
+    min-height: 20px;
+    font-weight: bold;
+}
+
+/* =========================================
+   PANTALLA KDS (COCINA) - ENCABEZADO
+   ========================================= */
 header {
     background-color: #1e1e2f;
     color: white;
@@ -53,11 +80,35 @@ header {
     justify-content: space-between;
     align-items: center;
 }
-.header-left { display: flex; align-items: center; gap: 15px; }
-.badge { background: #00cc6a; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 14px; color: #111;}
-.btn-logout { background: transparent; color: #ff4c4c; border: 2px solid #ff4c4c; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-/* Grid de Tarjetas de Pedidos */
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.badge {
+    background: #00cc6a;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    color: #111;
+}
+
+.btn-logout {
+    background: transparent;
+    color: #ff4c4c;
+    border: 2px solid #ff4c4c;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* =========================================
+   GRILLA Y TARJETAS DE PEDIDOS
+   ========================================= */
 .grid-pedidos {
     padding: 20px;
     display: grid;
@@ -67,23 +118,79 @@ header {
 }
 
 .tarjeta-pedido {
-    background: white; border-radius: 12px;
+    background: white;
+    border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    display: flex; flex-direction: column; overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     border-top: 5px solid #ffc107; /* Amarillo por defecto */
 }
 
 .tarjeta-header {
-    background: #f8f9fa; padding: 15px; border-bottom: 1px solid #eee;
-    display: flex; justify-content: space-between; align-items: center;
+    background: #f8f9fa;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
+
 .tarjeta-header h3 { font-size: 24px; color: #111; }
+
 .tarjeta-body { padding: 15px; flex-grow: 1; }
-.tarjeta-body ul { list-style: none; padding: 0; font-size: 20px; font-weight: bold; }
-.tarjeta-body li { margin-bottom: 10px; border-bottom: 1px dashed #ddd; padding-bottom: 5px; }
+
+.tarjeta-body ul {
+    list-style: none;
+    padding: 0;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.tarjeta-body li {
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #ddd;
+    padding-bottom: 5px;
+}
 
 .btn-despachar {
-    background: #00cc6a; color: #111; border: none; width: 100%;
-    padding: 20px; font-size: 22px; font-weight: bold; cursor: pointer;
+    background: #00cc6a;
+    color: #111;
+    border: none;
+    width: 100%;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    cursor: pointer;
 }
+
 .btn-despachar:active { background: #00aa55; }
+
+/* =========================================
+   ADAPTACIONES PARA CELULARES (< 600px)
+   ========================================= */
+@media screen and (max-width: 600px) {
+    header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .grid-pedidos {
+        grid-template-columns: 1fr; /* Una sola columna */
+        padding: 10px;
+    }
+
+    .tarjeta-header h3 {
+        font-size: 20px;
+    }
+
+    .tarjeta-body ul {
+        font-size: 16px;
+    }
+
+    .btn-despachar {
+        font-size: 18px;
+        padding: 15px;
+    }
+}
