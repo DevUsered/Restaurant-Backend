@@ -155,4 +155,48 @@ public class PromocionService {
         }
         return afectadas;
     }
+    @Transactional
+    public boolean actualizarPromocion(Promocion promo){
+        String sqlProducto = "UPDATE productos SET nombre = ?, precio = ?, imagen_base64 = ?, fecha_inicio = ?, fecha_fin = ?, atributos_extra = ?::jsonb WHERE id_producto = ?";
+        try{
+            String jsonAtributos = "{}";
+            if (promo.getDiasValidos() != null && !promo.getDiasValidos().equals("Todos") && !promo.getDiasValidos().isEmpty()) {
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, String> map = new HashMap<>();
+                map.put("diasValidos", promo.getDiasValidos());
+                jsonAtributos = mapper.writeValueAsString(map);
+            }
+            int afectadas = db.update(sqlProducto, promo.getNombre(), promo.getPrecio(), promo.getImagenURL(), promo.getFechaInicio(), promo.getFechaFin(), jsonAtributos, promo.getId());
+            if(afectadas > 0){
+                db.update("DELETE FROM detalle_combo WHERE id_promocion = ?", promo.getId());
+            }
+            if(!promo.getProductosCombo().isEmpty()){
+                String sqlDetalle = "INSERT INTO detalle_combo (id_promocion, id_producto, cantidad) VALUES (?, ?, ?)";
+                db.batchUpdate(sqlDetalle, new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        DetalleCombo detalle = promo.getProductosCombo().get(i);
+                        ps.setInt(1, promo.getId());
+                        ps.setInt(2, detalle.getProducto().getId());
+                        ps.setInt(3, detalle.getCantidad());
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return promo.getProductosCombo().size();
+                    }
+                });
+            }
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_CATALOGO\"}");
+                }
+            });
+            return true;
+        }catch (Exception e){
+            System.out.println("Error al actulizar la promoción: "+e.getMessage());
+        }
+        return false;
+    }
 }

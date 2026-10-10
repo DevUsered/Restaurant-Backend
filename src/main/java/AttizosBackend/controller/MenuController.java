@@ -62,7 +62,10 @@ public class MenuController {
     public Promocion crearPromocion(@RequestBody Promocion promocion) {
         return promocionService.guardarNuevaPromocion(promocion);
     }
-
+    @PutMapping("/promociones")
+    public boolean actualizarPromocion(@RequestBody Promocion promocion) {
+        return promocionService.actualizarPromocion(promocion);
+    }
     @PutMapping("/promociones/verificar-caducidad")
     public int verificarCaducidadPromociones() {
         return promocionService.verificarYDesactivarPromociones();
