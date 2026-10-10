@@ -7,10 +7,9 @@ const WS_URL = `ws://${SERVIDOR_IP}:${PUERTO}/ws-sync`;
 let socket = null;
 let usuarioActual = null;
 
-// ==========================================
-// NUEVAS VARIABLES PARA AUDIO Y MEMORIA
-// ==========================================
+
 const campanaAudio = new Audio('sounds/cocina.mp3');
+campanaAudio.play();
 let idsPedidosEnPantalla = [];
 let esPrimeraCarga = true;
 
@@ -24,18 +23,12 @@ async function iniciarSesion() {
         return;
     }
 
-    // 🔥 ¡EL TRUCO ANTI-CHROME VA AQUÍ ARRIBA! 🔥
-    // Lo ejecutamos INMEDIATAMENTE después del clic, antes de que Chrome se ponga estricto
-    campanaAudio.volume = 0;
-    let playPromise = campanaAudio.play();
-    if (playPromise !== undefined) {
-        playPromise.then(() => {
-            campanaAudio.pause();
-            campanaAudio.currentTime = 0;
-            campanaAudio.volume = 1.0; // Listo para sonar fuerte más adelante
-        }).catch(e => console.log("Chrome requiere interacción adicional."));
-    }
-
+    campanaAudio.muted = true;
+    campanaAudio.play().then(() => {
+        campanaAudio.pause();
+        campanaAudio.currentTime = 0;
+        campanaAudio.muted = false;
+    }).catch((e) => console.warn("Chromme bloqueó la precarga de audio. ", e));
     try {
         lblError.innerText = "Conectando...";
 

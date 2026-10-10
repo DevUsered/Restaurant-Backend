@@ -4,6 +4,8 @@ import AttizosBackend.model.DetalleCombo;
 import AttizosBackend.model.Producto;
 import AttizosBackend.model.Promocion;
 import AttizosBackend.websocket.SyncSocketHandler;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -17,6 +19,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +44,21 @@ public class PromocionService {
 
             if (rs.getDate("fecha_inicio") != null) promo.setFechaInicio(rs.getDate("fecha_inicio").toLocalDate());
             if (rs.getDate("fecha_fin") != null) promo.setFechaFin(rs.getDate("fecha_fin").toLocalDate());
+
+            String jsonAtributos = rs.getString("atributos_extra");
+            if(jsonAtributos != null && !jsonAtributos.trim().isEmpty()){
+                try{
+                    ObjectMapper mapper = new ObjectMapper();
+                    Map<String, String> atributos = mapper.readValue(jsonAtributos, new TypeReference<Map<String, String>>(){});
+                    promo.setAtributosDinamicos(atributos);
+                    promo.setDiasValidos(atributos.getOrDefault("diasValidos", "Todos"));
+                }catch (Exception e){
+                    System.out.println("Error al parsear atributos extra: " + e.getMessage());
+                }
+            }else{
+                promo.setDiasValidos("Todos");
+            }
+
 
             String sqlDetalle = "SELECT dc.cantidad, p.id_producto, p.nombre, p.precio FROM detalle_combo dc JOIN productos p ON dc.id_producto = p.id_producto WHERE dc.id_promocion = ?";
             java.util.List<AttizosBackend.model.DetalleCombo> detalles = db.query(sqlDetalle, (rsDet, rowNumDet) -> {
@@ -67,7 +85,7 @@ public class PromocionService {
 
     @Transactional
     public Promocion guardarNuevaPromocion(Promocion promo) {
-        String sqlProducto = "INSERT INTO productos (nombre, precio, categoria, stock_directo, imagen_base64, estado, fecha_inicio, fecha_fin) VALUES (?, ?, 'Promocion', 0, ?, 'Activo', ?, ?)";
+        String sqlProducto = "INSERT INTO productos (nombre, precio, categoria, stock_directo, imagen_base64, estado, fecha_inicio, fecha_fin, atributos_extra) VALUES (?, ?, 'Promocion', 0, ?, 'Activo', ?, ?, ?::jsonb)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -78,6 +96,19 @@ public class PromocionService {
             ps.setString(3, promo.getImagenURL());
             ps.setObject(4, promo.getFechaInicio());
             ps.setObject(5, promo.getFechaFin());
+
+            String jsonAtributos = "{}";
+            if(promo.getDiasValidos() != null && !promo.getDiasValidos().trim().isEmpty()){
+                try{
+                    ObjectMapper mapper = new ObjectMapper();
+                    Map<String, String> map = new HashMap<>();
+                    map.put("diasValidos", promo.getDiasValidos());
+                    jsonAtributos = mapper.writeValueAsString(map);
+                }catch (Exception e){
+                    System.out.println("Error al serializar atributos extra: " + e.getMessage());
+                }
+            }
+            ps.setString(6, jsonAtributos);
             return ps;
         }, keyHolder);
 

@@ -17,11 +17,18 @@ body {
    CONTROL DE PANTALLAS (LOGIN / KDS)
    ========================================= */
 .screen { display: none; }
-.visible { display: flex; flex-direction: column; height: 100vh; }
+
+/* 100dvh para evitar que la barra de Chrome en Android esconda contenido */
+.visible {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+}
 .hidden { display: none !important; }
 
 /* =========================================
-   PANTALLA DE LOGIN
+   PANTALLA DE LOGIN (¡MÁS LINDA Y MODERNA!)
    ========================================= */
 #login-container {
     justify-content: center;
@@ -31,46 +38,70 @@ body {
 
 .login-box {
     background: #fff;
-    padding: 30px;
-    border-radius: 12px;
+    padding: 40px 30px; /* Un poco más de aire */
+    border-radius: 24px; /* Redondeado mucho más suave */
     width: 90%;
     max-width: 400px;
     text-align: center;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2); /* Sombra más elegante */
 }
 
-.login-box h2 { margin-bottom: 20px; color: #111; }
+.login-box h2 {
+    margin-bottom: 25px;
+    color: #1e1e2f;
+    font-size: 28px;
+}
 
 .login-box input {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
+    border: 2px solid #eaeaea;
+    border-radius: 12px; /* Inputs más redonditos */
     font-size: 16px;
+    background-color: #fafafa;
+    transition: all 0.3s ease; /* Transición suave al hacer clic */
+}
+
+.login-box input:focus {
+    outline: none;
+    border-color: #00cc6a;
+    background-color: #fff;
+    box-shadow: 0 0 0 4px rgba(0, 204, 106, 0.15); /* Resplandor verde */
 }
 
 .login-box button {
     width: 100%;
-    padding: 15px;
+    padding: 16px;
+    margin-top: 10px;
     border: none;
-    border-radius: 8px;
+    border-radius: 16px; /* Botón súper redondeado */
     background-color: #00cc6a;
     color: white;
     font-weight: bold;
     font-size: 18px;
     cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-box button:hover {
+    transform: translateY(-2px); /* Se levanta un poquito */
+    box-shadow: 0 8px 20px rgba(0, 204, 106, 0.3); /* Sombra verde */
+}
+
+.login-box button:active {
+    transform: translateY(1px);
 }
 
 .error-text {
-    color: red;
-    margin-top: 10px;
+    color: #ff4c4c;
+    margin-top: 15px;
     min-height: 20px;
     font-weight: bold;
 }
 
 /* =========================================
-   PANTALLA KDS (COCINA) - ENCABEZADO
+   ENCABEZADO (HEADER) ESTILO MODERNO
    ========================================= */
 header {
     background-color: #1e1e2f;
@@ -79,6 +110,11 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    /* Redondeado solo abajo para que parezca una solapa */
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* Sombra sutil para separarlo del fondo */
+    z-index: 10;
 }
 
 .header-left {
@@ -89,42 +125,58 @@ header {
 
 .badge {
     background: #00cc6a;
-    padding: 5px 10px;
-    border-radius: 20px;
+    padding: 6px 12px;
+    border-radius: 20px; /* Estilo píldora */
     font-weight: bold;
     font-size: 14px;
     color: #111;
+    box-shadow: 0 2px 8px rgba(0, 204, 106, 0.2);
 }
 
 .btn-logout {
     background: transparent;
     color: #ff4c4c;
     border: 2px solid #ff4c4c;
-    padding: 8px 15px;
-    border-radius: 8px;
+    padding: 8px 18px;
+    border-radius: 20px; /* Estilo píldora para hacer juego con el badge */
     font-weight: bold;
     cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+    background-color: rgba(255, 76, 76, 0.1);
+    box-shadow: 0 2px 10px rgba(255, 76, 76, 0.15);
 }
 
 /* =========================================
    GRILLA Y TARJETAS DE PEDIDOS
    ========================================= */
 .grid-pedidos {
+    flex: 1;
+    min-height: 0;
     padding: 20px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-auto-rows: max-content;
     gap: 20px;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .tarjeta-pedido {
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border-radius: 16px; /* Un poco más redondo para hacer juego con lo demás */
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08); /* Sombra más elegante */
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border-top: 5px solid #ffc107; /* Amarillo por defecto */
+    border-top: 5px solid #ffc107;
+    transition: transform 0.2s ease;
+}
+
+.tarjeta-pedido:hover {
+    transform: translateY(-2px);
 }
 
 .tarjeta-header {
@@ -136,7 +188,7 @@ header {
     align-items: center;
 }
 
-.tarjeta-header h3 { font-size: 24px; color: #111; }
+.tarjeta-header h3 { font-size: 24px; color: #1e1e2f; }
 
 .tarjeta-body { padding: 15px; flex-grow: 1; }
 
@@ -151,6 +203,7 @@ header {
     margin-bottom: 10px;
     border-bottom: 1px dashed #ddd;
     padding-bottom: 5px;
+    color: #444;
 }
 
 .btn-despachar {
@@ -162,6 +215,7 @@ header {
     font-size: 22px;
     font-weight: bold;
     cursor: pointer;
+    transition: background-color 0.2s;
 }
 
 .btn-despachar:active { background: #00aa55; }
@@ -174,11 +228,21 @@ header {
         flex-direction: column;
         gap: 15px;
         text-align: center;
+        border-bottom-left-radius: 24px;
+        border-bottom-right-radius: 24px;
     }
 
     .grid-pedidos {
-        grid-template-columns: 1fr; /* Una sola columna */
-        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        padding: 15px;
+        gap: 20px;
+    }
+
+    .tarjeta-pedido {
+        flex: 0 0 auto;
+        width: 100%;
+        height: auto;
     }
 
     .tarjeta-header h3 {

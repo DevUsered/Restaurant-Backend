@@ -54,9 +54,15 @@ public class PedidoService {
     public boolean eliminarPedidoDespachado(int idPedido) {
         db.update("UPDATE facturas SET estado = 'Finalizada' WHERE numero_factura = ?", idPedido);
         boolean exito =  db.update("DELETE FROM cola_cocina WHERE id_pedido = ?", idPedido) > 0;
+
         if(exito) {
-            socketHandler.notificarAClientes("SYNC_PEDIDOS");
-            socketHandler.notificarAClientes("SYNC_REPORTES");
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_PEDIDOS\"}");
+                    socketHandler.notificarAClientes("{\"evento\": \"SYNC_REPORTES\"}");
+                }
+            });
         }
 
         return exito;
