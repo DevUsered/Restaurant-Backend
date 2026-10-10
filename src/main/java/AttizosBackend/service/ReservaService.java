@@ -51,6 +51,7 @@ public class ReservaService {
             return r;
         });
     }
+    @Transactional
     public boolean insertarReserva(Reserva r){
         String sql = "INSERT INTO reservas (id_reserva, nombre_cliente, telefono, cantidad_personas, fecha_hora, observaciones, estado) " +
                 "VALUES (?, ?, ?, ?, ?, ?, 'Pendiente')";
@@ -67,6 +68,7 @@ public class ReservaService {
         }
         return filas > 0;
     }
+    @Transactional
     public boolean actualizarEstadoReserva(String idReserva, String nuevoEstado){
         String sql = "UPDATE reservas SET estado = ? WHERE id_reserva = ?";
         boolean exito =  db.update(sql, nuevoEstado, idReserva) > 0;
