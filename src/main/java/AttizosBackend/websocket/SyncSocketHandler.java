@@ -27,12 +27,17 @@ public class SyncSocketHandler extends TextWebSocketHandler {
         System.out.println("Caja desconectada del tunel. ID: "+session.getId());
     }
     public void notificarAClientes(String mensaje){
+        TextMessage textMessage = new TextMessage(mensaje);
         for(WebSocketSession session : sesionesActivas){
             if(session.isOpen()){
-                try{
-                    session.sendMessage(new TextMessage(mensaje));
-                } catch (IOException e) {
-                    System.out.println("Error al enviar mensaje: "+ session.getId());
+                synchronized (session){
+                    try{
+                        if(session.isOpen()){
+                            session.sendMessage(textMessage);
+                        }
+                    } catch (IOException e) {
+                        System.out.println("Error al enviar mensaje: "+ session.getId());
+                    }
                 }
             }
         }
