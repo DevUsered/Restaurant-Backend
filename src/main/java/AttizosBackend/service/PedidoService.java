@@ -52,20 +52,58 @@ public class PedidoService {
     }
     @Transactional
     public boolean eliminarPedidoDespachado(int idPedido) {
-        db.update("UPDATE facturas SET estado = 'Finalizada' WHERE numero_factura = ?", idPedido);
-        boolean exito =  db.update("DELETE FROM cola_cocina WHERE id_pedido = ?", idPedido) > 0;
+       
+        String sqlInfo = "SELECT cc.numero_ticket, f.nombre_cliente " +
+                "FROM cola_cocina cc " +
+                "INNER JOIN facturas f ON cc.id_pedido = f.numero_factura " +
+                "WHERE cc.id_pedido = ?";
 
-        if(exito) {
+        var infoList = db.queryForList(sqlInfo, idPedido);
+
+        int numeroTicket = idPedido;
+        String nombreCliente = "Cliente";
+
+        if (!infoList.isEmpty()) {
+            var info = infoList.get(0);
+            Object ticketObj = info.get("numero_ticket");
+            if (ticketObj instanceof Number) {
+                numeroTicket = ((Number) ticketObj).intValue();
+            }
+            Object clienteObj = info.get("nombre_cliente");
+            if (clienteObj != null && !clienteObj.toString().trim().isEmpty()) {
+                nombreCliente = clienteObj.toString().trim();
+            }
+        }
+        db.update("UPDATE facturas SET estado = 'Finalizada' WHERE numero_factura = ?", idPedido);
+        boolean exito = db.update("DELETE FROM cola_cocina WHERE id_pedido = ?", idPedido) > 0;
+        if (exito) {
+            final int ticketFinal = numeroTicket;
+            final String clienteFinal = escaparJson(nombreCliente);
+
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
                     socketHandler.notificarAClientes("{\"evento\": \"SYNC_PEDIDOS\"}");
                     socketHandler.notificarAClientes("{\"evento\": \"SYNC_REPORTES\"}");
+                    socketHandler.notificarAClientes(
+                            "{\"evento\": \"PEDIDO_LISTO\", \"idPedido\": " + idPedido +
+                            ", \"ticket\": " + ticketFinal +
+                            ", \"cliente\": \"" + clienteFinal + "\"}"
+                    );
                 }
             });
         }
 
         return exito;
+    }
+
+    private String escaparJson(String texto) {
+        if (texto == null) return "";
+        return texto
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", " ")
+                .replace("\r", " ");
     }
     @Transactional
     public boolean cancelarPedidoYAnularVenta(int idPedido) {
