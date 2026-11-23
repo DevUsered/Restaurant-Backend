@@ -25,10 +25,11 @@ body {
     height: 100dvh;
     overflow: hidden;
 }
+
 .hidden { display: none !important; }
 
 /* =========================================
-   PANTALLA DE LOGIN (¡MÁS LINDA Y MODERNA!)
+   PANTALLA DE LOGIN
    ========================================= */
 #login-container {
     justify-content: center;
@@ -38,12 +39,12 @@ body {
 
 .login-box {
     background: #fff;
-    padding: 40px 30px; /* Un poco más de aire */
-    border-radius: 24px; /* Redondeado mucho más suave */
+    padding: 40px 30px;
+    border-radius: 24px;
     width: 90%;
     max-width: 400px;
     text-align: center;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.2); /* Sombra más elegante */
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
 .login-box h2 {
@@ -57,17 +58,17 @@ body {
     padding: 14px;
     margin-bottom: 15px;
     border: 2px solid #eaeaea;
-    border-radius: 12px; /* Inputs más redonditos */
+    border-radius: 12px;
     font-size: 16px;
     background-color: #fafafa;
-    transition: all 0.3s ease; /* Transición suave al hacer clic */
+    transition: all 0.3s ease;
 }
 
 .login-box input:focus {
     outline: none;
     border-color: #00cc6a;
     background-color: #fff;
-    box-shadow: 0 0 0 4px rgba(0, 204, 106, 0.15); /* Resplandor verde */
+    box-shadow: 0 0 0 4px rgba(0, 204, 106, 0.15);
 }
 
 .login-box button {
@@ -75,7 +76,7 @@ body {
     padding: 16px;
     margin-top: 10px;
     border: none;
-    border-radius: 16px; /* Botón súper redondeado */
+    border-radius: 16px;
     background-color: #00cc6a;
     color: white;
     font-weight: bold;
@@ -85,8 +86,8 @@ body {
 }
 
 .login-box button:hover {
-    transform: translateY(-2px); /* Se levanta un poquito */
-    box-shadow: 0 8px 20px rgba(0, 204, 106, 0.3); /* Sombra verde */
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 204, 106, 0.3);
 }
 
 .login-box button:active {
@@ -101,7 +102,7 @@ body {
 }
 
 /* =========================================
-   ENCABEZADO (HEADER) ESTILO MODERNO
+   ENCABEZADO (HEADER)
    ========================================= */
 header {
     background-color: #1e1e2f;
@@ -110,10 +111,9 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    /* Redondeado solo abajo para que parezca una solapa */
     border-bottom-left-radius: 20px;
     border-bottom-right-radius: 20px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* Sombra sutil para separarlo del fondo */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     z-index: 10;
 }
 
@@ -123,10 +123,18 @@ header {
     gap: 15px;
 }
 
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
 .badge {
     background: #00cc6a;
     padding: 6px 12px;
-    border-radius: 20px; /* Estilo píldora */
+    border-radius: 20px;
     font-weight: bold;
     font-size: 14px;
     color: #111;
@@ -138,7 +146,7 @@ header {
     color: #ff4c4c;
     border: 2px solid #ff4c4c;
     padding: 8px 18px;
-    border-radius: 20px; /* Estilo píldora para hacer juego con el badge */
+    border-radius: 20px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -149,15 +157,50 @@ header {
     box-shadow: 0 2px 10px rgba(255, 76, 76, 0.15);
 }
 
+.btn-audio-alerta {
+    background-color: #ffc107;
+    color: #1e1e2f;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+    animation: pulsoAlerta 1.8s infinite;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-audio-alerta:hover {
+    background-color: #ffca2c;
+    transform: translateY(-1px);
+}
+
+.btn-audio-alerta:active {
+    transform: translateY(1px);
+}
+
+@keyframes pulsoAlerta {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+    }
+}
+
 /* =========================================
-   GRILLA Y TARJETAS DE PEDIDOS
+   GRILLA Y TARJETAS DE PEDIDOS (ALTA LEGIBILIDAD)
    ========================================= */
 .grid-pedidos {
     flex: 1;
     min-height: 0;
     padding: 20px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     grid-auto-rows: max-content;
     gap: 20px;
     overflow-y: auto;
@@ -166,12 +209,12 @@ header {
 
 .tarjeta-pedido {
     background: white;
-    border-radius: 16px; /* Un poco más redondo para hacer juego con lo demás */
-    box-shadow: 0 6px 15px rgba(0,0,0,0.08); /* Sombra más elegante */
+    border-radius: 16px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border-top: 5px solid #ffc107;
+    border-top: 6px solid #ffc107;
     transition: transform 0.2s ease;
 }
 
@@ -180,30 +223,58 @@ header {
 }
 
 .tarjeta-header {
-    background: #f8f9fa;
-    padding: 15px;
-    border-bottom: 1px solid #eee;
+    background: #f1f3f5;
+    padding: 16px 20px;
+    border-bottom: 2px solid #e2e6ea;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 12px;
 }
 
-.tarjeta-header h3 { font-size: 24px; color: #1e1e2f; }
+.cliente-nombre {
+    font-size: 32px;
+    font-weight: 900;
+    color: #111111;
+    line-height: 1.15;
+    word-break: break-word;
+}
 
-.tarjeta-body { padding: 15px; flex-grow: 1; }
+.ticket-numero {
+    font-size: 14px;
+    font-weight: 700;
+    color: #555;
+    background-color: #e2e6ea;
+    padding: 5px 10px;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tarjeta-body {
+    padding: 18px 20px;
+    flex-grow: 1;
+}
 
 .tarjeta-body ul {
     list-style: none;
     padding: 0;
-    font-size: 20px;
-    font-weight: bold;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.35;
 }
 
 .tarjeta-body li {
-    margin-bottom: 10px;
-    border-bottom: 1px dashed #ddd;
-    padding-bottom: 5px;
-    color: #444;
+    margin-bottom: 14px;
+    border-bottom: 2px dashed #ccc;
+    padding-bottom: 10px;
+    color: #111111;
+}
+
+.tarjeta-body li:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 .btn-despachar {
@@ -212,21 +283,29 @@ header {
     border: none;
     width: 100%;
     padding: 20px;
-    font-size: 22px;
-    font-weight: bold;
+    font-size: 24px;
+    font-weight: 800;
     cursor: pointer;
     transition: background-color 0.2s;
 }
 
-.btn-despachar:active { background: #00aa55; }
+.btn-despachar:active {
+    background: #00aa55;
+}
+.btn-despachar:disabled {
+    background: #95d5b2;
+    color: #555;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
 
 /* =========================================
-   ADAPTACIONES PARA CELULARES (< 600px)
+   ADAPTACIONES PARA CELULARES Y TABLETS CHICAS
    ========================================= */
 @media screen and (max-width: 600px) {
     header {
         flex-direction: column;
-        gap: 15px;
+        gap: 12px;
         text-align: center;
         border-bottom-left-radius: 24px;
         border-bottom-right-radius: 24px;
@@ -245,16 +324,21 @@ header {
         height: auto;
     }
 
-    .tarjeta-header h3 {
-        font-size: 20px;
+    .cliente-nombre {
+        font-size: 28px;
+    }
+
+    .ticket-numero {
+        font-size: 13px;
+        padding: 4px 8px;
     }
 
     .tarjeta-body ul {
-        font-size: 16px;
+        font-size: 24px;
     }
 
     .btn-despachar {
-        font-size: 18px;
-        padding: 15px;
+        font-size: 22px;
+        padding: 18px;
     }
 }
