@@ -9,7 +9,7 @@
 <body>
 
 <!-- PANTALLA DE LOGIN -->
-<div id="login-container" class="screen visible">
+<div id="login-container" class="screen hidden">
     <div class="login-box">
         <h2>👨‍🍳 Acceso a Cocina</h2>
         <input type="text" id="txtUsuario" placeholder="Usuario">
@@ -26,7 +26,12 @@
             <h1>🔥 Pedidos en Cocina</h1>
             <span id="lblNombreCocinero" class="badge">Cocinero</span>
         </div>
-        <button class="btn-logout" onclick="cerrarSesion()">❌ Salir</button>
+        <div class="header-right">
+            <button id="btnActivarAudio" class="btn-audio-alerta hidden" onclick="activarAudioConPrueba()">
+                🔇 Activar sonido
+            </button>
+            <button class="btn-logout" onclick="cerrarSesion()">❌ Salir</button>
+        </div>
     </header>
 
     <!-- Aquí se dibujarán las tarjetas de los pedidos con JavaScript -->
