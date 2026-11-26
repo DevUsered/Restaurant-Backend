@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Cobro QR - Craft POS</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: #FDF6E3;
+            color: #111111;
+            height: 100dvh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px;
+            overflow: hidden;
+        }
+
+        /* En modo pantalla completa: oculta barras superior e inferior y centra solo la tarjeta */
+        :fullscreen body,
+        body:fullscreen {
+            justify-content: center;
+            padding: 12px;
+        }
+
+        :fullscreen .barra-estado,
+        :fullscreen .pie-pagina,
+        :fullscreen #btnPantallaCompleta {
+            display: none !important;
+        }
+
+        .barra-estado {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #555555;
+        }
+
+        .indicador-red {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #FFFFFF;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(218, 165, 32, 0.45);
+        }
+
+        .punto {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ff4c4c;
+        }
+
+        .punto.conectado {
+            background-color: #00cc6a;
+            box-shadow: 0 0 8px rgba(0, 204, 106, 0.6);
+        }
+
+        .btn-fullscreen-top {
+            background: #111111;
+            color: #FFFFFF;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .tarjeta-central {
+            width: 100%;
+            max-width: 440px;
+            background: #FFFFFF;
+            border-radius: 26px;
+            border: 2px solid rgba(218, 165, 32, 0.55);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.10);
+            padding: 28px 22px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .oculto {
+            display: none !important;
+        }
+
+        /* ESTADO 1: REPOSO */
+        .logo-circulo {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FFC107, #DAA520);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 44px;
+            box-shadow: 0 8px 20px rgba(218, 165, 32, 0.35);
+        }
+
+        .titulo-bienvenida {
+            font-size: 26px;
+            font-weight: 900;
+            color: #111111;
+        }
+
+        .subtitulo-reposo {
+            font-size: 16px;
+            color: #555555;
+            line-height: 1.4;
+        }
+
+        .btn-full-principal {
+            margin-top: 6px;
+            background: linear-gradient(135deg, #FFC107, #DAA520);
+            color: #111111;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(218, 165, 32, 0.35);
+        }
+
+        /* ESTADO 2: QR ACTIVO */
+        .etiqueta-qr {
+            background: rgba(218, 165, 32, 0.18);
+            color: #8a6400;
+            font-weight: 800;
+            font-size: 13px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        .monto-cobro {
+            font-size: 42px;
+            font-weight: 900;
+            color: #218c4e;
+            line-height: 1;
+        }
+
+        .glosa-cobro {
+            font-size: 15px;
+            font-weight: 600;
+            color: #555555;
+        }
+
+        .marco-qr {
+            background: #FFFFFF;
+            padding: 14px;
+            border-radius: 20px;
+            border: 2px solid #EEEEEE;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+        }
+
+        .marco-qr img {
+            width: 260px;
+            height: 260px;
+            max-width: 70vw;
+            max-height: 70vw;
+            display: block;
+            object-fit: contain;
+        }
+
+        .instruccion-escaneo {
+            font-size: 15px;
+            font-weight: 700;
+            color: #111111;
+        }
+
+        /* ESTADO 3: PAGO CONFIRMADO */
+        .check-exito {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00e676, #00cc6a);
+            color: #FFFFFF;
+            font-size: 52px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 24px rgba(0, 204, 106, 0.35);
+            animation: popIn 0.35s ease-out;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .titulo-exito {
+            font-size: 28px;
+            font-weight: 900;
+            color: #218c4e;
+        }
+
+        .pie-pagina {
+            font-size: 12px;
+            color: #777777;
+            font-weight: 600;
+        }
+
+        .btn-simular {
+            margin-top: 6px;
+            width: 100%;
+            padding: 13px 18px;
+            border-radius: 14px;
+            border: 2px dashed #218c4e;
+            background: rgba(33, 140, 78, 0.12);
+            color: #218c4e;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+
+        .btn-simular:active {
+            transform: scale(0.97);
+            background: rgba(33, 140, 78, 0.22);
+        }
+
+        .btn-simular:disabled {
+            opacity: 0.6;
+            cursor: default;
+        }
+    </style>
+</head>
+<body onclick="activarModoKiosco()">
+
+    <div class="barra-estado">
+        <div class="indicador-red">
+            <span id="puntoConexion" class="punto"></span>
+            <span id="textoConexion">Conectando...</span>
+        </div>
+        <button class="btn-fullscreen-top" onclick="activarModoKiosco()">⛶ Pantalla Completa</button>
+    </div>
+
+    <!-- VISTA 1: ESPERANDO CLIENTE -->
+    <main id="vistaReposo" class="tarjeta-central">
+        <div class="logo-circulo">🍽️</div>
+        <h1 class="titulo-bienvenida">¡Bienvenido!</h1>
+        <p class="subtitulo-reposo">Aquí aparecerá tu código <strong>QR Simple</strong> al momento de realizar el pago.</p>
+        <button id="btnPantallaCompleta" class="btn-full-principal" onclick="activarModoKiosco()">
+            ⛶ Activar Pantalla Completa
+        </button>
+    </main>
+
+    <!-- VISTA 2: CÓDIGO QR LISTO PARA ESCANEAR -->
+    <main id="vistaQr" class="tarjeta-central oculto">
+        <span class="etiqueta-qr">ESCANEA CON TU BANCO • QR SIMPLE</span>
+        <div id="lblMonto" class="monto-cobro">Bs. 0.00</div>
+        <div id="lblGlosa" class="glosa-cobro">Consumo</div>
+        <div class="marco-qr">
+            <img id="imgQr" src="" alt="Código QR de Pago">
+        </div>
+        <p class="instruccion-escaneo">📱 Abre tu app bancaria y escanea el código</p>
+        <button id="btnSimularPago" class="btn-simular oculto" onclick="simularPagoManual(event)">
+            ✅ Simular Pago (Modo Prueba)
+        </button>
+    </main>
+
+    <!-- VISTA 3: PAGO CONFIRMADO -->
+    <main id="vistaExito" class="tarjeta-central oculto">
+        <div class="check-exito">✓</div>
+        <h2 class="titulo-exito">¡Pago Recibido!</h2>
+        <p id="lblDetalleExito" class="subtitulo-reposo">Muchas gracias por su compra.</p>
+    </main>
+
+    <div class="pie-pagina">Pago seguro con QR Simple</div>
+
+    <script>
+        const HOST = window.location.hostname;
+        const PUERTO = window.location.port || "8080";
+        const WS_URL = `ws://${HOST}:${PUERTO}/ws-sync`;
+
+        let socket = null;
+        let timerVueltaReposo = null;
+        let wakeLock = null;
+
+        function mostrarVista(nombre) {
+            document.getElementById("vistaReposo").classList.add("oculto");
+            document.getElementById("vistaQr").classList.add("oculto");
+            document.getElementById("vistaExito").classList.add("oculto");
+            document.getElementById(nombre).classList.remove("oculto");
+        }
+
+        async function mantenerPantallaEncendida() {
+            if (!("wakeLock" in navigator) || wakeLock !== null) return;
+            try {
+                wakeLock = await navigator.wakeLock.request("screen");
+                wakeLock.addEventListener("release", () => { wakeLock = null; });
+            } catch (_) {}
+        }
+
+        async function activarModoKiosco() {
+            mantenerPantallaEncendida();
+            const elem = document.documentElement;
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                try {
+                    if (elem.requestFullscreen) {
+                        await elem.requestFullscreen({ navigationUI: "hide" });
+                    } else if (elem.webkitRequestFullscreen) {
+                        await elem.webkitRequestFullscreen();
+                    }
+                } catch (_) {}
+            }
+        }
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") mantenerPantallaEncendida();
+        });
+
+        function conectarWebSocket() {
+            socket = new WebSocket(WS_URL);
+
+            socket.onopen = () => {
+                document.getElementById("puntoConexion").classList.add("conectado");
+                document.getElementById("textoConexion").innerText = "En línea";
+                mantenerPantallaEncendida();
+            };
+
+            socket.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+
+                    if (data.evento === "MOSTRAR_QR") {
+                        clearTimeout(timerVueltaReposo);
+                        const monto = Number(data.monto || 0).toFixed(2);
+                        document.getElementById("lblMonto").innerText = `Bs. ${monto}`;
+                        document.getElementById("lblGlosa").innerText = data.glosa || "Consumo";
+
+                        const b64 = String(data.imagenBase64 || "");
+                        document.getElementById("imgQr").src = b64.startsWith("data:")
+                            ? b64
+                            : `data:image/png;base64,${b64}`;
+
+                        const btnSimular = document.getElementById("btnSimularPago");
+                        btnSimular.disabled = false;
+                        btnSimular.innerText = "✅ Simular Pago (Modo Prueba)";
+                        if (data.modoSimulador) {
+                            btnSimular.classList.remove("oculto");
+                        } else {
+                            btnSimular.classList.add("oculto");
+                        }
+
+                        mostrarVista("vistaQr");
+
+                    } else if (data.evento === "PAGO_CONFIRMADO") {
+                        clearTimeout(timerVueltaReposo);
+                        const monto = Number(data.monto || 0).toFixed(2);
+                        document.getElementById("lblDetalleExito").innerText =
+                            `Monto abonado: Bs. ${monto}\n¡Muchas gracias por su preferencia!`;
+                        mostrarVista("vistaExito");
+
+                        timerVueltaReposo = setTimeout(() => {
+                            mostrarVista("vistaReposo");
+                        }, 4500);
+
+                    } else if (data.evento === "LIMPIAR_QR") {
+                        clearTimeout(timerVueltaReposo);
+                        mostrarVista("vistaReposo");
+                    }
+                } catch (e) {}
+            };
+
+            socket.onclose = () => {
+                document.getElementById("puntoConexion").classList.remove("conectado");
+                document.getElementById("textoConexion").innerText = "Reconectando...";
+                setTimeout(conectarWebSocket, 3000);
+            };
+        }
+
+        async function simularPagoManual(event) {
+            if (event) event.stopPropagation();
+            const btn = document.getElementById("btnSimularPago");
+            btn.disabled = true;
+            btn.innerText = "⏳ Confirmando pago...";
+
+            try {
+                await fetch("/api/qr/simular-pago", { method: "POST" });
+            } catch (e) {
+                btn.disabled = false;
+                btn.innerText = "✅ Simular Pago (Modo Prueba)";
+            }
+        }
+
+        conectarWebSocket();
+    </script>
+</body>
+</html>
